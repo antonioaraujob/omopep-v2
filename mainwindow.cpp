@@ -13,6 +13,18 @@
 #include "emulator.h"
 
 
+/**
+ * @brief Funcion de comparacion de particulas con respecto al valor de desempeno de latencia
+ * @param p1 particula 1 a comparar
+ * @param p2 particula 2 a comparar
+ * @return Verdadero si p1 es menor que p2 con respecto a la funcion objetivo de latencia
+ */
+inline static bool xLessThanLatency(Particle *p1, Particle *p2)
+{
+    return p1->getPerformanceLatency() < p2->getPerformanceLatency();
+}
+
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -44,9 +56,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->lineEditParticlesParameter->setValidator(validatorParticlesParameter);
     ui->lineEditParticlesParameter->setToolTip("[1..400]");
 
-    QValidator * validatorIterationsParameter = new QIntValidator(1, 1000, this);
+    QValidator * validatorIterationsParameter = new QIntValidator(1, 100000, this);
     ui->lineEditIterationsParameter->setValidator(validatorIterationsParameter);
-    ui->lineEditIterationsParameter->setToolTip("[1..1000]");
+    ui->lineEditIterationsParameter->setToolTip("[1..100000]");
 
     QValidator * validatorSubintervalsParameter = new QIntValidator(2, 10, this);
     ui->lineEditSubintervals->setValidator(validatorSubintervalsParameter);
@@ -153,14 +165,31 @@ void MainWindow::executeAlgorithm()
     // poblar la lista de individuos no dominados del archivo externo
     populateListView();
 
+    // crear directorio de resultados
+    QString resultsDirectory = createResultsDirectory();
+
     if (simulation->getSelectionModified())
     {
         modificatedAlgorithmSolutions = simulation->getGlobalRepository()->getRepositoryList();
+
+        // ordenar la lista en orden ascendente de acuerdo a la latencia (F2)
+        qSort(modificatedAlgorithmSolutions.begin(), modificatedAlgorithmSolutions.end(), xLessThanLatency);
+
+        // escribir en un archivo los individuos del frente de pareto encontrado en un archivo
+        reportParticleAsFile(modificatedAlgorithmSolutions, resultsDirectory, "particulasFrenteParetoModificado");
     }
     else
     {
         genericAlgorithmSolutions = simulation->getGlobalRepository()->getRepositoryList();
+
+        // ordenar la lista en orden ascendente de acuerdo a la latencia (F2)
+        qSort(genericAlgorithmSolutions.begin(), genericAlgorithmSolutions.end(), xLessThanLatency);
+
+        // escribir en un archivo los individuos del frente de pareto encontrado en un archivo
+        reportParticleAsFile(genericAlgorithmSolutions, resultsDirectory, "particulasFrenteParetoGenerico");
     }
+
+
 
     // generar el grafico
     plotSolutions();
@@ -290,6 +319,9 @@ void MainWindow::setupCustomPlot(QCustomPlot *customPlot)
     customPlot->clearGraphs();
 
     Particle * particle;
+
+    qSort(genericAlgorithmSolutions.begin(), genericAlgorithmSolutions.end(), xLessThanLatency);
+
     int count = genericAlgorithmSolutions.count();
     QVector<double> discovery(count), latency(count);
     for (int i = 0; i < count; i++)
@@ -299,6 +331,7 @@ void MainWindow::setupCustomPlot(QCustomPlot *customPlot)
         latency[i] = particle->getPerformanceLatency();
     }
 
+    qSort(modificatedAlgorithmSolutions.begin(), modificatedAlgorithmSolutions.end(), xLessThanLatency);
 
     int countModified = modificatedAlgorithmSolutions.count();
     QVector<double> discoveryModified(countModified), latencyModified(countModified);
@@ -347,11 +380,11 @@ void MainWindow::setupCustomPlot(QCustomPlot *customPlot)
     }
 
     // give the axes some labels:
-    customPlot->xAxis->setLabel("Descubierta");
-    customPlot->yAxis->setLabel("Latencia");
+    customPlot->xAxis->setLabel("Indice de Descubierta (AP/s)");
+    customPlot->yAxis->setLabel("Latencia (ms)");
     // set axes ranges, so we see all data:
-    customPlot->xAxis->setRange(0, 75);
-    customPlot->yAxis->setRange(0, 300);
+    customPlot->xAxis->setRange(0.5, 3);
+    customPlot->yAxis->setRange(0, 600);
 
     customPlot->yAxis->grid()->setSubGridVisible(true);
 
@@ -611,5 +644,68 @@ void MainWindow::plotSolutions()
     if (!ui->checkBoxComparation->isChecked())
     {
         setupCustomPlot(ui->customPlot);
+    }
+}
+
+
+QString MainWindow::createResultsDirectory()
+{
+
+    QString resultsDir = QDir::currentPath() + "/resultados";
+    qDebug(qPrintable(resultsDir));
+
+    QString outputDir = resultsDir + "/" + QDateTime::currentDateTime().toString("dd.MM.yyyy_hh.mm.ss");
+    qDebug(qPrintable(outputDir));
+
+
+    QDir dir(resultsDir);
+    if (!dir.exists())
+    {
+        qDebug("no existe");
+        if (dir.mkdir(resultsDir))
+            qDebug("se acaba de crear");
+        else
+            qDebug("no se pudo crear");
+    }
+    else
+    {
+        qDebug("existe");
+    }
+
+    // crear el directorio con la fecha
+    QDir tmpDir(outputDir);
+    if (!tmpDir.exists())
+    {
+        qDebug("no existe el directorio de ejecucion");
+        if (tmpDir.mkdir(outputDir))
+            qDebug("creado el directorio de la ejecucion");
+        else
+            qDebug("fallo la creacion del directorio de ejecucion");
+
+    }
+    return outputDir;
+
+}
+
+
+void MainWindow::reportParticleAsFile(QList<Particle*> list, QString resultsSubdirectory, QString fileName)
+{
+    QFile file(resultsSubdirectory+"/"+fileName+".txt");
+    if (file.exists())
+    {
+        file.remove();
+    }
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append))
+    {
+        QString msg = "No se pudo crear el archivo /tmp/"+fileName+".txt";
+        qDebug(qPrintable(msg));
+        return;
+    }
+    QTextStream out(&file);
+    //out << resultsSubdirectory +"/"+fileName+".txt - Individuos encontrados luego de ejecutar el algoritmo cultural: " << "\n";
+
+    for(int i=0; i<list.count(); i++)
+    {
+        out << list.at(i)->getParticleAsQString() << "\n";
     }
 }

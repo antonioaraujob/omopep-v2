@@ -13,6 +13,9 @@ TEMPLATE = app
 
 QMAKE_CXXFLAGS += -std=c++11
 
+# para eliminar la aparicion de los qDebug descomentar la siguiente linea
+DEFINES += QT_NO_DEBUG_OUTPUT
+
 LIBS += -lsqlite3
 
 SOURCES += main.cpp\

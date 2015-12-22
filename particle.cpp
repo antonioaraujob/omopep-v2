@@ -30,12 +30,12 @@ Particle::Particle(int numberOfApsDeployed, int maxSpeed)
     QString experiment("full");
 
     //Scan scan(database.toStdString(),experiment.toStdString());
-    ScanningCampaing scan(database.toStdString(),experiment.toStdString());
-    scan.init();
+    //ScanningCampaing scan(database.toStdString(),experiment.toStdString());
+    //scan.init();
 
     //Scan::ScanResults results = scan.execute(11, 10, 30);
     //Scan::ScanResults results;
-    ScanningCampaing::ScanResults results;
+    //ScanningCampaing::ScanResults results;
 
     //std::cout << results.size() << " results: " << std::endl;
 
@@ -58,7 +58,9 @@ Particle::Particle(int numberOfApsDeployed, int maxSpeed)
 
         //qDebug("**channel: %d, min: %f, max: %f",randomChannel, minChannelTime, maxChannelTime);
         //results = scan.execute(randomChannel, minChannelTime, maxChannelTime);
-        apsFound = scan.getAPs(randomChannel, minChannelTime, maxChannelTime);
+        //apsFound = scan.getAPs(randomChannel, minChannelTime, maxChannelTime);
+
+        apsFound = Emulator::emulateScan(randomChannel, minChannelTime, maxChannelTime);
 
 
         //qDebug("**numero de APs encontrados en el canal %d: %d",randomChannel, results.size());
@@ -119,11 +121,15 @@ Particle::Particle(Particle &p)
 
     // calcular el valor de desempeno para la descubierta
     //setPerformanceDiscovery(getRandomMaxChannelTime());
-    calculateDiscoveryValue();
+    //calculateDiscoveryValue();
+    performanceDiscovery = p.getPerformanceDiscovery();
+
 
     // calcular el valor de desempeno para la latencia
     //setPerformanceLatency(getRandomMaxChannelTime());
-    calculateLatencyValue();
+    //calculateLatencyValue();
+    performanceLatency = p.getPerformanceLatency();
+
 
     // inicializar el diccionario de canales utilizados en el vuelo en falso
     for (int i=1; i<=11;i++)
@@ -412,6 +418,9 @@ double Particle::getAPsAndLatencyOfAllChannels()
         {
             if (max == 0)
             {
+                Q_ASSERT(min > 0);
+                Q_ASSERT(max > 0);
+
                 index = APmin/min;
                 // agregar el indice de descubierta del canal
                 //of1IndexList.append(index);
@@ -419,10 +428,14 @@ double Particle::getAPsAndLatencyOfAllChannels()
                 // asignar el valor del numero de APs encontrados al canal
                 setParameter(c*4+3, APmin);
 
+                Q_ASSERT(min >0);
                 discovery = discovery + APmin/min;
             }
             else
             {
+                Q_ASSERT(min > 0);
+                Q_ASSERT(max > 0);
+
                 index = APmin/min + std::abs(APmax-APmin)/max;
                 // agregar el indice de descubierta del canal
                 //of1IndexList.append(index);
@@ -435,14 +448,16 @@ double Particle::getAPsAndLatencyOfAllChannels()
         }
         else
         {
-                index = APmin/min;
-                // agregar el indice de descubierta del canal
-                //of1IndexList.append(index);
+            Q_ASSERT(min > 0);
+            Q_ASSERT(max > 0);
+            index = APmin/min;
+            // agregar el indice de descubierta del canal
+            //of1IndexList.append(index);
 
-                // asignar el valor del numero de APs encontrados al canal
-                setParameter(c*4+3, APmin);
+            // asignar el valor del numero de APs encontrados al canal
+            setParameter(c*4+3, APmin);
 
-                discovery = discovery + index;
+            discovery = discovery + index;
         }
 
     } // fin de iteracion por cada canal

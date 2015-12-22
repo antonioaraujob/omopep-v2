@@ -15,6 +15,7 @@ void ParticleRepository::addParticle(Particle * p, QList<Particle *> list)
     //personalRepository.append(p);
 
     int particleId = p->getParticleId();
+
     //personalRepository.value(particleId).append(p);
     personalRepository.insert(particleId, list);
 

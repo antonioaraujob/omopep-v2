@@ -102,16 +102,22 @@ void Simulation::initializeParticles()
         //qDebug("particleId: %d", particle->getParticleId());
         particleList.append(particle);
 
+        // Inicializar el repositorio global
+        //
         // verificar repositorio global
         // verificar si la particula NO ES DOMINADA por cada particula del repositorio global
         if (!gRepository->isNewParticleDominatedByGlobalRepository(particle))
         {
             gRepository->addNonDominatedParticle(particle);
 
-            gRepository->eliminateDominatedParticles();
+            // comentado porque el proceso de eliminacion de particulas dominadas
+            // se hizo en la funcion anterior
+            //gRepository->eliminateDominatedParticles();
 
         }
 
+        // Inicializar el repositorio local de posiciones de la particula
+        //
         // agregar la posicion actual de la particula a su repositorio local
         QList<Particle*> internalParticleList;
         Particle * newParticle = new Particle(*particle);
@@ -251,14 +257,14 @@ void Simulation::updateParticles()
             else if (particle->isThisParameterAMinChannelTime(index))
             {
                 //qDebug("   isThisParameterAMinChannelTime(index)");
-                if (newParameter < 0)
+                if (newParameter < 5)
                 {
-                    newParameter = 0;
+                    newParameter = 5;
                     //qDebug("   el minChannelTime mutado esta por debajo del limite (index %d)", index);
                 }
-                else if (newParameter > 10)
+                else if (newParameter > 15)
                 {
-                    newParameter = 10;
+                    newParameter = 15;
                     //qDebug("   el minChannelTime mutado esta por encima del limite (index %d)", index);
                 }
 
@@ -267,26 +273,30 @@ void Simulation::updateParticles()
             else if (particle->isThisParameterAMaxChannelTime(index))
             {
                 //qDebug("   isThisParameterAMaxChannelTime(index)");
-                if (newParameter < 10)
+                if (newParameter < 3)
                 {
-                    newParameter = 10;
+                    newParameter = 3;
                     //qDebug("   el maxChannelTime mutado esta por debajo del limite (index %d)", index);
                 }
-                else if (newParameter > 100)
+                else if (newParameter > 90)
                 {
-                    newParameter = 100;
+                    newParameter = 90;
                     //qDebug("   el maxChannelTime mutado esta por encima del limite (index %d)", index);
                 }
 
                 //qDebug(qPrintable("   maxChannelTime despues de mutado: "+QString::number(intYi)));
             }
-            else if (particle->isThisParameterAPs(index))
+            //else if (particle->isThisParameterAPs(index))
+            else
             {
                 //qDebug("   isThisParameterAPs(index)");
-                newParameter = particle->getNewParameterAPs(particle->getParameter(index-3),
-                                           particle->getParameter(index-2),
-                                           particle->getParameter(index-1));
+                //newParameter = particle->getNewParameterAPs(particle->getParameter(index-3),
+                //                           particle->getParameter(index-2),
+                //                           particle->getParameter(index-1));
                 //qDebug(qPrintable("   APs despues de mutado: "+QString::number(intYi)));
+
+                //qDebug("el parametro es el número de APs y no se debe modificar");
+                continue;
             }
 
             //qDebug("oldParameter: %f - newParameter: %d", particle->getParameter(j), newParameter);
@@ -320,7 +330,7 @@ void Simulation::updateParticles()
         {
             gRepository->addNonDominatedParticle(particle);
 
-            gRepository->eliminateDominatedParticles();
+            //gRepository->eliminateDominatedParticles();
 
             if (selectionModified)
             {
@@ -336,7 +346,7 @@ void Simulation::updateParticles()
             //pRepository->addNonDominatedParticle(particle);
             pRepository->addNonDominatedParticle(particle);
 
-            pRepository->eliminateDominatedParticles();
+            //pRepository->eliminateDominatedParticles();
 
         }
 
