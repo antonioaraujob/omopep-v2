@@ -7,6 +7,9 @@
 #include <QMessageBox>
 #include <QStringListModel>
 #include <QVector>
+#include <QFile>
+#include <QDir>
+#include <QTextStream>
 
 
 #include "particle.h"
@@ -83,6 +86,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->label_tiempo_generico->setVisible(false);
     ui->label_tiempo_modificado->setVisible(false);
 
+
+    resultsDirectory = "";
+
+    firstExecution = true;
 }
 
 MainWindow::~MainWindow()
@@ -165,8 +172,16 @@ void MainWindow::executeAlgorithm()
     // poblar la lista de individuos no dominados del archivo externo
     populateListView();
 
-    // crear directorio de resultados
-    QString resultsDirectory = createResultsDirectory();
+
+
+
+    //if ( (ui->checkBoxComparation->isChecked()) && (firstExecution) )
+    if (firstExecution)
+    {
+        firstExecution = false;
+        // crear directorio de resultados
+        resultsDirectory = createResultsDirectory();
+    }
 
     if (simulation->getSelectionModified())
     {
@@ -507,8 +522,8 @@ void MainWindow::setupCustomPlot2(QCustomPlot *customPlot)
     customPlot->xAxis->setLabel("Descubierta");
     customPlot->yAxis->setLabel("Latencia");
     // set axes ranges, so we see all data:
-    customPlot->xAxis->setRange(0, 75);
-    customPlot->yAxis->setRange(0, 300);
+    customPlot->xAxis->setRange(0, 3);
+    customPlot->yAxis->setRange(0, 600);
 
     customPlot->yAxis->grid()->setSubGridVisible(true);
 
@@ -605,6 +620,7 @@ void MainWindow::compareAlgorithms()
     QTime timer;
     timer.start();
 
+    // primera ejecucion: generica
     executeAlgorithm();
 
     int runtimeGeneric = timer.elapsed(); //gets the runtime in ms
@@ -620,6 +636,8 @@ void MainWindow::compareAlgorithms()
 
 
     timer.start();
+
+    // segunda ejecucion: modificado
     executeAlgorithm();
     int runtimeModified = timer.elapsed(); //gets the runtime in ms
     ui->psoModifiedTime->setText(QString::number(runtimeModified)+" ms");
@@ -636,6 +654,7 @@ void MainWindow::compareAlgorithms()
     ui->psoGenericNumber->setText(QString::number(genericAlgorithmSolutions.count()));
     ui->psoModifiedNumber->setText(QString::number(modificatedAlgorithmSolutions.count()));
 
+    firstExecution = true;
 }
 
 

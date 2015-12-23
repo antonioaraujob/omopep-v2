@@ -79,6 +79,16 @@ private:
      */
     QList<Particle *> modificatedAlgorithmSolutions;
 
+    /**
+     * @brief Cadena con la ruta absoluta para guardar los resultados de la ejecucion
+     */
+    QString resultsDirectory;
+
+    /**
+     * @brief Bandera para identificar la primera ejecucion del algoritmo en el caso de la comparacion
+     * del generico y el modificado
+     */
+    bool firstExecution;
 
 public slots:
 
